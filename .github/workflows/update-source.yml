@@ -1,0 +1,83 @@
+name: Repair SideStore source
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release da rileggere (es. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xspese-source-update
+  cancel-in-progress: false
+
+jobs:
+  update-source:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout branch predefinito
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Scarica IPA e metadati dalla Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag non valido: ${tag}" >&2
+            exit 1
+          fi
+          mkdir -p dist
+          gh release download "${tag}" --dir dist --pattern 'xSpese-*.ipa' --pattern 'build-info.json'
+          test -s dist/build-info.json
+          test "$(find dist -maxdepth 1 -name 'xSpese-*.ipa' | wc -l | tr -d ' ')" = "1"
+
+      - name: Rigenera source.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(python3 - <<'PY'
+          import json
+          import shlex
+          from pathlib import Path
+          data = json.loads(Path('dist/build-info.json').read_text())
+          for key in ('version', 'build', 'bundleIdentifier', 'ipa'):
+              print(f"{key.upper()}={shlex.quote(str(data[key]))}")
+          PY
+          )"
+          python3 scripts/generate_source.py \
+            --version "${VERSION}" \
+            --build "${BUILD}" \
+            --bundle-id "${BUNDLEIDENTIFIER}" \
+            --ipa "dist/${IPA}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${{ inputs.tag }}" \
+            --branch "${{ github.event.repository.default_branch }}" \
+            --source source.json \
+            --notes-file CHANGELOG.md
+          gh release upload "${{ inputs.tag }}" source.json --clobber
+
+      - name: Commit source.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add source.json
+          if git diff --cached --quiet; then
+            echo "source.json è già aggiornato."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: rigenera source da ${{ inputs.tag }}"
+          if ! git push; then
+            echo "::warning::Push non riuscito; source.json è comunque allegato alla Release."
+          fi

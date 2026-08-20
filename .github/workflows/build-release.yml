@@ -1,0 +1,158 @@
+name: Build and publish IPA
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag SemVer da pubblicare (es. v0.1.0)"
+        required: true
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xspese-release-pipeline
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determina tag e versione
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="${{ inputs.tag }}"
+          fi
+          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag non valido: ${tag}" >&2
+            exit 1
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "version=${tag#v}" >> "${GITHUB_OUTPUT}"
+
+      - name: Versione Xcode
+        run: xcodebuild -version
+
+      - name: Crea IPA unsigned
+        env:
+          EXPECTED_VERSION: ${{ steps.metadata.outputs.version }}
+        run: ./scripts/build_ipa.sh
+
+      - name: Leggi metadati build
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "${GITHUB_OUTPUT}"
+          import json
+          from pathlib import Path
+          data = json.loads(Path("dist/build-info.json").read_text())
+          print(f"version={data['version']}")
+          print(f"build={data['build']}")
+          print(f"bundle_id={data['bundleIdentifier']}")
+          print(f"ipa={data['ipa']}")
+          PY
+
+      - name: Verifica IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "dist/${{ steps.build.outputs.ipa }}"
+          unzip -tq "dist/${{ steps.build.outputs.ipa }}"
+          unzip -l "dist/${{ steps.build.outputs.ipa }}" | grep -q 'Payload/xSpese.app/Info.plist'
+
+      - name: Carica artifact della pipeline
+        uses: actions/upload-artifact@v4
+        with:
+          name: xSpese-${{ steps.build.outputs.version }}
+          path: |
+            dist/${{ steps.build.outputs.ipa }}
+            dist/build-info.json
+          if-no-files-found: error
+
+      - name: Crea o aggiorna GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.metadata.outputs.tag }}"
+          assets=("dist/${{ steps.build.outputs.ipa }}" "dist/build-info.json")
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release upload "${tag}" "${assets[@]}" --clobber
+          else
+            gh release create "${tag}" "${assets[@]}" \
+              --target "${GITHUB_SHA}" \
+              --title "xSpese ${{ steps.build.outputs.version }}" \
+              --generate-notes
+          fi
+
+      - name: Genera source SideStore
+        shell: bash
+        run: |
+          set -euo pipefail
+          default_branch="${{ github.event.repository.default_branch }}"
+          default_branch="${default_branch:-main}"
+          git fetch origin "${default_branch}"
+          git show "origin/${default_branch}:source.json" > "${RUNNER_TEMP}/source-base.json"
+          python3 scripts/generate_source.py \
+            --version "${{ steps.build.outputs.version }}" \
+            --build "${{ steps.build.outputs.build }}" \
+            --bundle-id "${{ steps.build.outputs.bundle_id }}" \
+            --ipa "dist/${{ steps.build.outputs.ipa }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${{ steps.metadata.outputs.tag }}" \
+            --branch "${default_branch}" \
+            --source "${RUNNER_TEMP}/source-base.json" \
+            --output "${RUNNER_TEMP}/source.json" \
+            --notes-file CHANGELOG.md
+          gh release upload "${{ steps.metadata.outputs.tag }}" "${RUNNER_TEMP}/source.json" --clobber
+
+      - name: Aggiorna source.json sul branch predefinito
+        shell: bash
+        run: |
+          set -euo pipefail
+          default_branch="${{ github.event.repository.default_branch }}"
+          default_branch="${default_branch:-main}"
+          git fetch origin "${default_branch}"
+          git switch --force-create source-update "origin/${default_branch}"
+          cp "${RUNNER_TEMP}/source.json" source.json
+          git add source.json
+          if git diff --cached --quiet; then
+            echo "source.json è già aggiornato."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: aggiorna source xSpese ${{ steps.build.outputs.version }}"
+          if ! git push origin "HEAD:${default_branch}"; then
+            echo "::warning::Push di source.json non riuscito; il file resta disponibile negli asset della Release."
+          fi
+
+      - name: Riepilogo
+        shell: bash
+        run: |
+          default_branch="${{ github.event.repository.default_branch }}"
+          default_branch="${default_branch:-main}"
+          {
+            echo "## xSpese ${{ steps.build.outputs.version }}"
+            echo ""
+            echo "- IPA: ${{ steps.build.outputs.ipa }}"
+            echo "- Build: ${{ steps.build.outputs.build }}"
+            echo "- Source: https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${default_branch}/source.json"
+          } >> "${GITHUB_STEP_SUMMARY}"

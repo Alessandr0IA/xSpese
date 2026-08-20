@@ -1,0 +1,32 @@
+{
+  "name": "xSpese SideStore Repo",
+  "identifier": "it.alessandroiacca.xSpese.source",
+  "subtitle": "Release di xSpese per SideStore",
+  "description": "Source SideStore ufficiale del progetto xSpese.",
+  "sourceURL": "https://raw.githubusercontent.com/Alessandr0IA/xSpese/main/source.json",
+  "website": "https://github.com/Alessandr0IA/xSpese",
+  "iconURL": "https://raw.githubusercontent.com/Alessandr0IA/xSpese/main/assets/icon.png",
+  "tintColor": "#3478F6",
+  "userinfo": {},
+  "apps": [
+    {
+      "beta": false,
+      "name": "xSpese",
+      "bundleIdentifier": "it.alessandroiacca.xSpese",
+      "developerName": "Alessandro Iacca",
+      "subtitle": "Gestione personale di spese e scadenze",
+      "localizedDescription": "Registra, sincronizza e analizza le spese tramite il tuo server Raspberry Pi.",
+      "iconURL": "https://raw.githubusercontent.com/Alessandr0IA/xSpese/main/assets/icon.png",
+      "tintColor": "#3478F6",
+      "category": "utilities",
+      "versions": [],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.security.application-groups"
+        ],
+        "privacy": {}
+      }
+    }
+  ],
+  "news": []
+}
