@@ -19,13 +19,29 @@
       "iconURL": "https://raw.githubusercontent.com/Alessandr0IA/xSpese/main/assets/icon.png",
       "tintColor": "#3478F6",
       "category": "utilities",
-      "versions": [],
+      "versions": [
+        {
+          "version": "0.1.0",
+          "buildVersion": "1",
+          "date": "2026-08-20",
+          "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.0/xSpese-0.1.0.ipa",
+          "size": 2067082,
+          "sha256": "3dca417ed5afed923a36358bf9be96dfe229d4a9531144441f961102ed04bdad",
+          "minOSVersion": "17.0",
+          "localizedDescription": "- Prima build distribuibile come IPA tramite GitHub Releases.\n- Registrazione delle spese con inserimento manuale e App Intent.\n- Sincronizzazione con il server Raspberry Pi tramite Meshnet.\n- Dashboard, movimenti server, regole esercenti e gestione delle scadenze.\n- Widget per scadenze, spese mensili, sincronizzazione e panoramica."
+        }
+      ],
       "appPermissions": {
         "entitlements": [
           "com.apple.security.application-groups"
         ],
         "privacy": {}
-      }
+      },
+      "version": "0.1.0",
+      "versionDate": "2026-08-20",
+      "versionDescription": "- Prima build distribuibile come IPA tramite GitHub Releases.\n- Registrazione delle spese con inserimento manuale e App Intent.\n- Sincronizzazione con il server Raspberry Pi tramite Meshnet.\n- Dashboard, movimenti server, regole esercenti e gestione delle scadenze.\n- Widget per scadenze, spese mensili, sincronizzazione e panoramica.",
+      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.0/xSpese-0.1.0.ipa",
+      "size": 2067082
     }
   ],
   "news": []
