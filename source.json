@@ -21,6 +21,16 @@
       "category": "utilities",
       "versions": [
         {
+          "version": "0.1.1",
+          "buildVersion": "2",
+          "date": "2026-08-20",
+          "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.1/xSpese-0.1.1.ipa",
+          "size": 2122776,
+          "sha256": "56513e1091d929b42eca622e5bb94b422d61d4833dc933bba97140391dcac2d0",
+          "minOSVersion": "17.0",
+          "localizedDescription": "- Build GitHub allineata a Xcode 26.6 e SDK iOS 26.5, come la build locale.\n- Entitlement App Group preservato nell'IPA per la rifirma di SideStore.\n- Rilevamento automatico dell'App Group rimappato da SideStore con il Team ID Apple.\n- Cache dei widget condivisa anche tramite file atomici nel contenitore App Group.\n- Aggiornamento dei widget quando xSpese torna in primo piano."
+        },
+        {
           "version": "0.1.0",
           "buildVersion": "1",
           "date": "2026-08-20",
@@ -37,11 +47,11 @@
         ],
         "privacy": {}
       },
-      "version": "0.1.0",
+      "version": "0.1.1",
       "versionDate": "2026-08-20",
-      "versionDescription": "- Prima build distribuibile come IPA tramite GitHub Releases.\n- Registrazione delle spese con inserimento manuale e App Intent.\n- Sincronizzazione con il server Raspberry Pi tramite Meshnet.\n- Dashboard, movimenti server, regole esercenti e gestione delle scadenze.\n- Widget per scadenze, spese mensili, sincronizzazione e panoramica.",
-      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.0/xSpese-0.1.0.ipa",
-      "size": 2067082
+      "versionDescription": "- Build GitHub allineata a Xcode 26.6 e SDK iOS 26.5, come la build locale.\n- Entitlement App Group preservato nell'IPA per la rifirma di SideStore.\n- Rilevamento automatico dell'App Group rimappato da SideStore con il Team ID Apple.\n- Cache dei widget condivisa anche tramite file atomici nel contenitore App Group.\n- Aggiornamento dei widget quando xSpese torna in primo piano.",
+      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.1/xSpese-0.1.1.ipa",
+      "size": 2122776
     }
   ],
   "news": []
