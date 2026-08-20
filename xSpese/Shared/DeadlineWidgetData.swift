@@ -31,19 +31,46 @@ struct SyncWidgetSnapshot: Codable {
     let lastSuccessfulSync: Date?
 }
 
-private enum WidgetSharedStore {
-    static let appGroupID = "group.it.alessandroiacca.xSpese"
+enum WidgetSharedStore {
+    private static let originalAppGroupID = "group.it.alessandroiacca.xSpese"
+
+    // SideStore rimappa gli App Group aggiungendo il Team ID del certificato
+    // personale e salva gli identificatori effettivi in ALTAppGroups.
+    static var appGroupID: String {
+        let signedGroups = Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? []
+        return signedGroups.first {
+            $0 == originalAppGroupID || $0.hasPrefix(originalAppGroupID + ".")
+        } ?? originalAppGroupID
+    }
+
+    static var isAvailable: Bool {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil
+    }
 
     static func save<Value: Encodable>(_ value: Value, forKey key: String) {
-        guard let defaults = UserDefaults(suiteName: appGroupID),
-              let data = try? JSONEncoder().encode(value) else { return }
-        defaults.set(data, forKey: key)
+        guard let data = try? JSONEncoder().encode(value) else { return }
+
+        if let fileURL = fileURL(forKey: key) {
+            try? data.write(to: fileURL, options: .atomic)
+        }
+
+        // Mantiene la compatibilità con le installazioni precedenti.
+        if let defaults = UserDefaults(suiteName: appGroupID) {
+            defaults.set(data, forKey: key)
+        }
     }
 
     static func load<Value: Decodable>(_ type: Value.Type, forKey key: String) -> Value? {
-        guard let defaults = UserDefaults(suiteName: appGroupID),
-              let data = defaults.data(forKey: key) else { return nil }
+        let data = fileURL(forKey: key).flatMap { try? Data(contentsOf: $0) }
+            ?? UserDefaults(suiteName: appGroupID)?.data(forKey: key)
+        guard let data else { return nil }
         return try? JSONDecoder().decode(type, from: data)
+    }
+
+    private static func fileURL(forKey key: String) -> URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)?
+            .appendingPathComponent("xspese-\(key).json", isDirectory: false)
     }
 }
 

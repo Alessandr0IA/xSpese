@@ -14,7 +14,9 @@ struct SettingsView: View {
 
     @State private var apiToken = ""
     @State private var isTesting = false
+    @State private var isRefreshingWidgets = false
     @State private var message: StatusMessage?
+    @State private var widgetMessage: StatusMessage?
 
     var body: some View {
         NavigationStack {
@@ -62,6 +64,47 @@ struct SettingsView: View {
                     } label: {
                         Label("Regole esercenti", systemImage: "wand.and.stars")
                     }
+                }
+
+                Section {
+                    LabeledContent("Condivisione dati") {
+                        Label(
+                            WidgetSharedStore.isAvailable ? "Attiva" : "Non disponibile",
+                            systemImage: WidgetSharedStore.isAvailable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                        )
+                        .foregroundStyle(WidgetSharedStore.isAvailable ? .green : .red)
+                    }
+
+                    if let widgetLastUpdatedAt {
+                        LabeledContent("Ultimo aggiornamento") {
+                            Text(widgetLastUpdatedAt, format: .dateTime.day().month().hour().minute())
+                        }
+                    }
+
+                    Button {
+                        Task { await refreshWidgets() }
+                    } label: {
+                        HStack {
+                            Text("Aggiorna widget ora")
+                            Spacer()
+                            if isRefreshingWidgets {
+                                ProgressView()
+                            }
+                        }
+                    }
+                    .disabled(isRefreshingWidgets || !WidgetSharedStore.isAvailable)
+
+                    if let widgetMessage {
+                        Label(
+                            widgetMessage.text,
+                            systemImage: widgetMessage.isSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                        )
+                        .foregroundStyle(widgetMessage.isSuccess ? .green : .red)
+                    }
+                } header: {
+                    Text("Widget")
+                } footer: {
+                    Text("App e widget devono condividere lo stesso App Group. Dopo un aggiornamento tramite SideStore può essere necessario rimuovere e aggiungere nuovamente il widget.")
                 }
 
                 Section {
@@ -125,6 +168,44 @@ struct SettingsView: View {
             dismiss()
         } catch {
             message = StatusMessage(text: error.localizedDescription, isSuccess: false)
+        }
+    }
+
+    private var widgetLastUpdatedAt: Date? {
+        [
+            DeadlineWidgetStore.load()?.updatedAt,
+            MonthlyWidgetStore.load()?.updatedAt,
+            SyncWidgetStore.load()?.updatedAt
+        ]
+        .compactMap { $0 }
+        .max()
+    }
+
+    @MainActor
+    private func refreshWidgets() async {
+        guard WidgetSharedStore.isAvailable else {
+            widgetMessage = StatusMessage(text: "App Group non disponibile in questa installazione.", isSuccess: false)
+            return
+        }
+
+        isRefreshingWidgets = true
+        defer { isRefreshingWidgets = false }
+
+        do {
+            try KeychainService.saveAPIToken(apiToken)
+            let client = try SyncService.shared.configuredClient()
+            let deadlines = try await client.fetchDeadlines(status: .open)
+            let components = Calendar.current.dateComponents([.year, .month], from: .now)
+            let report = try await client.fetchMonthlyReport(
+                year: components.year ?? 0,
+                month: components.month ?? 0
+            )
+            DeadlineWidgetCacheService.store(deadlines)
+            ExpenseWidgetCacheService.store(report)
+            ExpenseWidgetCacheService.updateSyncStatus()
+            widgetMessage = StatusMessage(text: "Widget aggiornati con i dati del server.", isSuccess: true)
+        } catch {
+            widgetMessage = StatusMessage(text: "Aggiornamento fallito: \(error.localizedDescription)", isSuccess: false)
         }
     }
 

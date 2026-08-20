@@ -16,7 +16,13 @@ struct xSpeseApp: App {
         }
         .modelContainer(modelContainer)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
+            if phase == .active {
+                Task { @MainActor in
+                    async let deadlines: Void = DeadlineWidgetCacheService.refresh()
+                    async let expenses: Void = ExpenseWidgetCacheService.refreshAll()
+                    _ = await (deadlines, expenses)
+                }
+            } else if phase == .background {
                 BackgroundSyncService.schedule()
             }
         }

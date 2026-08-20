@@ -77,7 +77,7 @@ Per aggiungerlo all'iPhone:
 4. premere **Modifica** e poi **Aggiungi widget**;
 5. cercare **xSpese** e scegliere il widget e il formato desiderati.
 
-App e widget condividono solamente riepiloghi gia pronti tramite l'App Group `group.it.alessandroiacca.xSpese`; il token API non viene copiato nell'estensione. In **Signing & Capabilities** l'App Group deve risultare abilitato sia per il target `xSpese` sia per `xSpeseWidgets`.
+App e widget condividono solamente riepiloghi gia pronti tramite un App Group; il token API non viene copiato nell'estensione. Nelle installazioni Xcode viene usato `group.it.alessandroiacca.xSpese`. Nelle installazioni SideStore l'app legge da `ALTAppGroups` l'identificatore rimappato con il Team ID Apple. In **Signing & Capabilities** l'App Group deve risultare abilitato sia per il target `xSpese` sia per `xSpeseWidgets`.
 
 ## Requisiti
 
@@ -97,12 +97,12 @@ App Intents e database SwiftData appartengono allo stesso target. L'App Group e 
 
 ## Build IPA locale
 
-La pipeline produce un'IPA **unsigned**, senza certificati, profili o credenziali Apple nel repository. SideStore applichera la firma necessaria durante l'installazione.
+La pipeline produce un'IPA senza certificati, profili o credenziali Apple nel repository. App ed estensione ricevono solamente una firma ad-hoc che conserva gli entitlement necessari a SideStore; durante l'installazione SideStore la sostituisce con la firma personale dell'utente.
 
 ```bash
 chmod +x scripts/build_ipa.sh
 ./scripts/build_ipa.sh
-unzip -l dist/xSpese-0.1.0.ipa
+unzip -l dist/xSpese-0.1.1.ipa
 ```
 
 Gli output sono:
@@ -176,9 +176,11 @@ SideStore scarica l'IPA dalla GitHub Release, la firma con l'account Apple confi
 2. aprire Comandi Rapidi;
 3. cercare **xSpese** e **Registra spesa**;
 4. eseguire una registrazione e verificare che compaia nell'archivio locale.
-5. verificare dalla Home che i widget xSpese siano disponibili.
+5. aprire **xSpese → Impostazioni → Widget** e verificare che **Condivisione dati** risulti **Attiva**;
+6. premere **Aggiorna widget ora** e attendere il messaggio di conferma;
+7. rimuovere eventuali widget della versione precedente e aggiungerli nuovamente dalla Home.
 
-L'estensione widget richiede un App ID aggiuntivo e l'App Group. Se SideStore non riesce a conservare queste capability con il profilo disponibile, l'app principale continuera a funzionare ma widget o App Intent potrebbero non comparire; in quel caso usare Xcode con il proprio team Apple.
+L'estensione widget richiede un App ID aggiuntivo e un App Group. L'IPA conserva entrambi gli entitlement e l'app usa automaticamente l'identificatore App Group rimappato da SideStore.
 
 ### Installazione IPA diretta come alternativa
 

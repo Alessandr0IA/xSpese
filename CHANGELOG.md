@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti di xSpese vengono documentate in questo file.
 
+## 0.1.1 - 2026-08-20
+
+- Build GitHub allineata a Xcode 26.6 e SDK iOS 26.5, come la build locale.
+- Entitlement App Group preservato nell'IPA per la rifirma di SideStore.
+- Rilevamento automatico dell'App Group rimappato da SideStore con il Team ID Apple.
+- Cache dei widget condivisa anche tramite file atomici nel contenitore App Group.
+- Aggiornamento dei widget quando xSpese torna in primo piano.
+
 ## 0.1.0 - 2026-08-20
 
 - Prima build distribuibile come IPA tramite GitHub Releases.
