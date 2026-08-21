@@ -164,6 +164,74 @@ struct APIClient {
         _ = try await execute(request)
     }
 
+    func fetchLoans() async throws -> [LoanDTO] {
+        let data = try await execute(authenticatedRequest(path: "api/prestiti"))
+        if let response = try? JSONDecoder().decode(LoansResponse.self, from: data) {
+            guard response.ok else { throw APIError.serverRejected }
+            return response.loans
+        }
+        if let loans = try? JSONDecoder().decode([LoanDTO].self, from: data) {
+            return loans
+        }
+        throw APIError.invalidResponse
+    }
+
+    func fetchLoan(id: Int) async throws -> LoanDTO {
+        let data = try await execute(authenticatedRequest(path: "api/prestiti/\(id)"))
+        if let response = try? JSONDecoder().decode(LoanResponse.self, from: data) {
+            guard response.ok else { throw APIError.serverRejected }
+            return response.loan
+        }
+        if let loan = try? JSONDecoder().decode(LoanDTO.self, from: data) {
+            return loan
+        }
+        throw APIError.invalidResponse
+    }
+
+    func createLoan(_ mutation: LoanMutation) async throws -> LoanDTO {
+        var request = authenticatedRequest(path: "api/prestiti", method: "POST")
+        request.httpBody = try JSONEncoder().encode(mutation)
+        let data = try await execute(request)
+        return try await savedLoan(from: data)
+    }
+
+    func updateLoan(id: Int, mutation: LoanMutation) async throws -> LoanDTO {
+        var request = authenticatedRequest(path: "api/prestiti/\(id)", method: "PATCH")
+        request.httpBody = try JSONEncoder().encode(mutation)
+        let data = try await execute(request)
+        if let response = try? JSONDecoder().decode(LoanSaveResponse.self, from: data),
+           response.ok, response.saved != false, let loan = response.loan {
+            return loan
+        }
+        return try await fetchLoan(id: id)
+    }
+
+    func payLoanInstallment(id: Int, request payment: LoanPaymentRequest) async throws -> LoanDTO {
+        var request = authenticatedRequest(path: "api/prestiti/\(id)/paga-rata", method: "POST")
+        request.httpBody = try JSONEncoder().encode(payment)
+        _ = try await execute(request)
+        return try await fetchLoan(id: id)
+    }
+
+    func importPastLoanInstallments(id: Int) async throws -> LoanDTO {
+        let request = authenticatedRequest(path: "api/prestiti/\(id)/importa-rate-passate", method: "POST")
+        _ = try await execute(request)
+        return try await fetchLoan(id: id)
+    }
+
+    func deleteLoan(id: Int) async throws {
+        let request = authenticatedRequest(path: "api/prestiti/\(id)", method: "DELETE")
+        _ = try await execute(request)
+    }
+
+    private func savedLoan(from data: Data) async throws -> LoanDTO {
+        let response = try JSONDecoder().decode(LoanSaveResponse.self, from: data)
+        guard response.ok, response.saved != false else { throw APIError.serverRejected }
+        if let loan = response.loan { return loan }
+        if let id = response.id { return try await fetchLoan(id: id) }
+        throw APIError.invalidResponse
+    }
+
     private func authenticatedRequest(path: String, method: String = "GET") -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = method
@@ -472,6 +540,278 @@ private struct DeadlineSaveResponse: Decodable {
     enum CodingKeys: String, CodingKey {
         case ok, saved
         case deadline = "scadenza"
+    }
+}
+
+enum LoanListStatus: String, CaseIterable, Identifiable {
+    case active
+    case completed
+    case all
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .active: "Attivi"
+        case .completed: "Estinti"
+        case .all: "Tutti"
+        }
+    }
+}
+
+struct LoanDTO: Decodable, Identifiable {
+    let id: Int
+    let title: String
+    let lender: String?
+    let borrower: String?
+    let type: String?
+    let totalAmount: Decimal
+    let installmentAmount: Decimal?
+    let remainingAmountFromServer: Decimal?
+    let currency: String
+    let totalInstallments: Int?
+    let paidInstallments: Int
+    let startDate: String?
+    let nextPaymentDate: String?
+    let dueDay: Int?
+    let frequency: String?
+    let interestRate: Decimal?
+    let userID: Int?
+    let user: String?
+    let categoryID: Int?
+    let category: String?
+    let paymentMethod: String?
+    let card: String?
+    let status: String
+    let notes: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    var isCompleted: Bool {
+        let normalized = status.lowercased()
+        return ["estinto", "estinta", "completato", "completata", "chiuso", "chiusa", "pagato", "pagata"].contains(normalized)
+            || (totalInstallments.map { paidInstallments >= $0 } ?? false)
+    }
+
+    var remainingInstallments: Int? {
+        totalInstallments.map { max($0 - paidInstallments, 0) }
+    }
+
+    var remainingAmount: Decimal {
+        if let remainingAmountFromServer { return max(remainingAmountFromServer, 0) }
+        guard let installmentAmount else { return isCompleted ? 0 : totalAmount }
+        return max(totalAmount - (installmentAmount * Decimal(paidInstallments)), 0)
+    }
+
+    var progress: Double {
+        guard let totalInstallments, totalInstallments > 0 else {
+            guard totalAmount > 0 else { return isCompleted ? 1 : 0 }
+            let paid = totalAmount - remainingAmount
+            return min(max(NSDecimalNumber(decimal: paid / totalAmount).doubleValue, 0), 1)
+        }
+        return min(max(Double(paidInstallments) / Double(totalInstallments), 0), 1)
+    }
+
+    var startDateValue: Date? { startDate.flatMap(Self.parseDate) }
+    var nextPaymentDateValue: Date? {
+        if let nextPaymentDate, let explicit = Self.parseDate(nextPaymentDate) { return explicit }
+        guard let startDateValue, !isCompleted else { return nil }
+        return Calendar.current.date(byAdding: .month, value: paidInstallments, to: startDateValue)
+    }
+
+    private static func parseDate(_ rawValue: String) -> Date? {
+        if let date = DeadlineDTO.dateOnlyFormatter.date(from: String(rawValue.prefix(10))) { return date }
+        return ISO8601DateFormatter().date(from: rawValue)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title = "titolo"
+        case name = "nome"
+        case description = "descrizione"
+        case lender = "creditore"
+        case institution = "istituto"
+        case borrower = "debitore"
+        case beneficiary = "beneficiario"
+        case type = "tipo"
+        case totalAmount = "importo_totale"
+        case amount = "importo"
+        case principal = "capitale"
+        case installmentAmount = "importo_rata"
+        case monthlyInstallment = "rata_mensile"
+        case installment = "rata"
+        case remainingAmount = "importo_residuo"
+        case residual = "residuo"
+        case totalInstallments = "numero_rate"
+        case installmentsTotal = "rate_totali"
+        case paidInstallments = "rate_pagate"
+        case installmentsPaid = "numero_rate_pagate"
+        case startDate = "data_inizio"
+        case nextPaymentDate = "data_prossima_rata"
+        case nextDueDate = "prossima_scadenza"
+        case dueDay = "giorno_scadenza"
+        case paymentDay = "giorno_pagamento"
+        case frequency = "frequenza"
+        case interestRate = "tasso_interesse"
+        case rate = "tasso"
+        case currency = "valuta"
+        case userID = "utente_id"
+        case user = "utente"
+        case categoryID = "categoria_id"
+        case category = "categoria"
+        case paymentMethod = "metodo_pagamento"
+        case card = "carta"
+        case status = "stato"
+        case notes = "note"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        func string(_ keys: [CodingKeys]) -> String? {
+            for key in keys {
+                if let value = try? container.decode(String.self, forKey: key), !value.isEmpty { return value }
+            }
+            return nil
+        }
+
+        func integer(_ keys: [CodingKeys]) -> Int? {
+            for key in keys {
+                if let value = try? container.decode(Int.self, forKey: key) { return value }
+                if let raw = try? container.decode(String.self, forKey: key), let value = Int(raw) { return value }
+            }
+            return nil
+        }
+
+        func decimal(_ keys: [CodingKeys]) -> Decimal? {
+            for key in keys {
+                if let value = try? container.decode(Decimal.self, forKey: key) { return value }
+                if let raw = try? container.decode(String.self, forKey: key),
+                   let value = Decimal(string: raw.replacingOccurrences(of: ",", with: "."), locale: Locale(identifier: "en_US_POSIX")) {
+                    return value
+                }
+            }
+            return nil
+        }
+
+        guard let decodedID = integer([.id]) else {
+            throw DecodingError.keyNotFound(CodingKeys.id, .init(codingPath: decoder.codingPath, debugDescription: "ID prestito mancante"))
+        }
+
+        id = decodedID
+        title = string([.title, .name, .description]) ?? "Prestito #\(decodedID)"
+        lender = string([.lender, .institution])
+        borrower = string([.borrower, .beneficiary])
+        type = string([.type])
+        totalAmount = decimal([.totalAmount, .amount, .principal]) ?? 0
+        installmentAmount = decimal([.installmentAmount, .monthlyInstallment, .installment])
+        remainingAmountFromServer = decimal([.remainingAmount, .residual])
+        currency = string([.currency])?.uppercased() ?? "EUR"
+        totalInstallments = integer([.totalInstallments, .installmentsTotal])
+        paidInstallments = integer([.paidInstallments, .installmentsPaid]) ?? 0
+        startDate = string([.startDate])
+        nextPaymentDate = string([.nextPaymentDate, .nextDueDate])
+        dueDay = integer([.dueDay, .paymentDay])
+        frequency = string([.frequency])
+        interestRate = decimal([.interestRate, .rate])
+        userID = integer([.userID])
+        user = string([.user])
+        categoryID = integer([.categoryID])
+        category = string([.category])
+        paymentMethod = string([.paymentMethod])
+        card = string([.card])
+        status = string([.status]) ?? "attivo"
+        notes = string([.notes])
+        createdAt = string([.createdAt])
+        updatedAt = string([.updatedAt])
+    }
+}
+
+struct LoanMutation: Encodable {
+    let title: String
+    let lender: String?
+    let borrower: String?
+    let type: String
+    let totalAmount: Decimal
+    let installmentAmount: Decimal
+    let currency: String
+    let totalInstallments: Int
+    let paidInstallments: Int
+    let startDate: String
+    let dueDay: Int
+    let frequency: String
+    let interestRate: Decimal?
+    let userID: Int
+    let categoryID: Int?
+    let paymentMethod: String?
+    let card: String?
+    let status: String
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title = "titolo"
+        case lender = "creditore"
+        case borrower = "debitore"
+        case type = "tipo"
+        case totalAmount = "importo_totale"
+        case installmentAmount = "importo_rata"
+        case currency = "valuta"
+        case totalInstallments = "numero_rate"
+        case paidInstallments = "rate_pagate"
+        case startDate = "data_inizio"
+        case dueDay = "giorno_scadenza"
+        case frequency = "frequenza"
+        case interestRate = "tasso_interesse"
+        case userID = "utente_id"
+        case categoryID = "categoria_id"
+        case paymentMethod = "metodo_pagamento"
+        case card
+        case status = "stato"
+        case notes = "note"
+    }
+}
+
+struct LoanPaymentRequest: Encodable {
+    let paymentDate: String
+    let createsMovement: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case paymentDate = "data_pagamento"
+        case createsMovement = "crea_movimento"
+    }
+}
+
+private struct LoansResponse: Decodable {
+    let ok: Bool
+    let loans: [LoanDTO]
+
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case loans = "prestiti"
+    }
+}
+
+private struct LoanResponse: Decodable {
+    let ok: Bool
+    let loan: LoanDTO
+
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case loan = "prestito"
+    }
+}
+
+private struct LoanSaveResponse: Decodable {
+    let ok: Bool
+    let saved: Bool?
+    let id: Int?
+    let loan: LoanDTO?
+
+    enum CodingKeys: String, CodingKey {
+        case ok, saved, id
+        case loan = "prestito"
     }
 }
 

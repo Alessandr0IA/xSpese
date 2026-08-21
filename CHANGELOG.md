@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti di xSpese vengono documentate in questo file.
 
+## 0.2.0 - 2026-08-21
+
+- Nuova scheda Prestiti con riepilogo, filtri e ricerca.
+- Creazione, modifica, dettaglio ed eliminazione dei prestiti.
+- Registrazione delle rate e creazione facoltativa del movimento associato.
+- Importazione idempotente delle rate passate.
+- Supporto ai campi storici del server e specifica completa delle API JSON.
+
 ## 0.1.1 - 2026-08-20
 
 - Build GitHub allineata a Xcode 26.6 e SDK iOS 26.5, come la build locale.

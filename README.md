@@ -14,6 +14,7 @@ App iOS 17 per registrare e consultare le spese, anche tramite Comandi Rapidi, e
 - gestione delle regole esercente/categoria e suggerimento durante l'inserimento;
 - gestione nativa delle scadenze con creazione, modifica, completamento, eliminazione e ricerca;
 - ricorrenze, priorita, promemoria locali e creazione del movimento al pagamento;
+- gestione completa dei prestiti con piano rate, residuo, avanzamento, pagamenti e importazione delle rate passate;
 - widget Home Screen per prossima scadenza, spese mensili, sincronizzazione e panoramica;
 - impostazioni per URL, token, utente predefinito, valuta e notifiche;
 - tentativo di sincronizzazione quando l'app torna attiva e aggiornamento opportunistico in background.
@@ -41,6 +42,7 @@ Il server Tailscale indicato usa HTTP, quindi il progetto consente traffico non 
 4. Usare **Dashboard** per il riepilogo mensile e **Server** per controllare ciò che risulta già sul Raspberry.
 5. Creare regole esercente/categoria dalle impostazioni per velocizzare le registrazioni successive.
 6. Usare **Scadenze** per programmare pagamenti e attivare **Promemoria scadenze** nelle impostazioni.
+7. Usare **Prestiti** per controllare capitale residuo, rate pagate e prossimi pagamenti.
 
 Se il Raspberry non è raggiungibile, la spesa non viene persa: rimane nel database locale e viene riprovata. Dopo più errori consecutivi l'app può inviare una notifica, se autorizzata.
 
@@ -57,6 +59,20 @@ La scheda **Scadenze** usa direttamente le API JSON del Raspberry. Le scadenze a
 - consultare separatamente scadenze aperte, completate, annullate o tutte.
 
 La specifica usata dal client si trova in `SCADENZE_API_SPEC.md`.
+
+## Prestiti
+
+La scheda **Prestiti** usa le API JSON `/api/prestiti` del Raspberry. Comprende:
+
+- riepilogo dei prestiti attivi, capitale residuo e importo complessivo delle rate;
+- filtri per prestiti attivi, estinti o tutti e ricerca per titolo, creditore e utente;
+- creazione e modifica del piano con importi, numero rate, tasso, scadenza, utente e categoria;
+- dettaglio con avanzamento, rate pagate, rate residue e prossima data;
+- registrazione di una rata con creazione facoltativa del movimento;
+- importazione idempotente delle rate passate;
+- eliminazione del prestito senza eliminare i movimenti già registrati.
+
+Il contratto JSON richiesto al server si trova in `PRESTITI_API_SPEC.md`. Le vecchie route web HTML `/prestiti` non sono sufficienti per questa schermata nativa.
 
 ## Widget Home Screen
 

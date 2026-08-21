@@ -31,6 +31,12 @@ struct AppTabView: View {
                     Label("Scadenze", systemImage: "calendar.badge.clock")
                 }
                 .tag(3)
+
+            LoansView()
+                .tabItem {
+                    Label("Prestiti", systemImage: "banknote.fill")
+                }
+                .tag(4)
         }
         .onOpenURL { url in
             guard url.scheme == "xspese" else { return }
@@ -39,6 +45,7 @@ struct AppTabView: View {
             case "dashboard": selectedTab = 1
             case "server": selectedTab = 2
             case "scadenze": selectedTab = 3
+            case "prestiti": selectedTab = 4
             default: break
             }
         }

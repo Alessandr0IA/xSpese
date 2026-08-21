@@ -34,6 +34,7 @@
 		A10000000000000000000019 /* xSpeseDeadlineWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* xSpeseDeadlineWidget.swift */; };
 		A1000000000000000000001A /* xSpeseWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000020 /* xSpeseWidgets.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000001B /* ExpenseWidgetCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000021 /* ExpenseWidgetCacheService.swift */; };
+		A1000000000000000000001C /* LoansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000022 /* LoansView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +95,8 @@
 		B1000000000000000000001F /* xSpeseWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = xSpeseWidgets.entitlements; sourceTree = "<group>"; };
 		B10000000000000000000020 /* xSpeseWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = xSpeseWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000021 /* ExpenseWidgetCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseWidgetCacheService.swift; sourceTree = "<group>"; };
+		B10000000000000000000022 /* LoansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoansView.swift; sourceTree = "<group>"; };
+		B10000000000000000000023 /* PRESTITI_API_SPEC.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRESTITI_API_SPEC.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +124,7 @@
 				D1000000000000000000000A /* xSpeseWidgets */,
 				B1000000000000000000000A /* README.md */,
 				B10000000000000000000019 /* SCADENZE_API_SPEC.md */,
+				B10000000000000000000023 /* PRESTITI_API_SPEC.md */,
 				D10000000000000000000008 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -194,6 +198,7 @@
 				B10000000000000000000014 /* MerchantRulesView.swift */,
 				B10000000000000000000015 /* DashboardView.swift */,
 				B10000000000000000000016 /* ServerMovementsView.swift */,
+				B10000000000000000000022 /* LoansView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -347,6 +352,7 @@
 				A10000000000000000000016 /* DeadlineWidgetData.swift in Sources */,
 				A10000000000000000000017 /* DeadlineWidgetCacheService.swift in Sources */,
 				A1000000000000000000001B /* ExpenseWidgetCacheService.swift in Sources */,
+				A1000000000000000000001C /* LoansView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,7 +473,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = xSpese/xSpese.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C2XD78W4AV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -479,7 +485,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = it.alessandroiacca.xSpese;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -495,7 +501,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = xSpese/xSpese.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C2XD78W4AV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -507,7 +513,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = it.alessandroiacca.xSpese;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -522,7 +528,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = xSpeseWidgets/xSpeseWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C2XD78W4AV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -533,7 +539,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = it.alessandroiacca.xSpese.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -549,7 +555,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = xSpeseWidgets/xSpeseWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = C2XD78W4AV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -560,7 +566,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = it.alessandroiacca.xSpese.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
