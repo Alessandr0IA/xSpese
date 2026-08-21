@@ -21,6 +21,16 @@
       "category": "utilities",
       "versions": [
         {
+          "version": "0.2.0",
+          "buildVersion": "3",
+          "date": "2026-08-21",
+          "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.0/xSpese-0.2.0.ipa",
+          "size": 2300819,
+          "sha256": "ea1b2c65713baf4b5c0f0457af143bf99b9fe2731bbe3d60db599149f85bbe17",
+          "minOSVersion": "17.0",
+          "localizedDescription": "- Nuova scheda Prestiti con riepilogo, filtri e ricerca.\n- Creazione, modifica, dettaglio ed eliminazione dei prestiti.\n- Registrazione delle rate e creazione facoltativa del movimento associato.\n- Importazione idempotente delle rate passate.\n- Supporto ai campi storici del server e specifica completa delle API JSON."
+        },
+        {
           "version": "0.1.1",
           "buildVersion": "2",
           "date": "2026-08-20",
@@ -47,11 +57,11 @@
         ],
         "privacy": {}
       },
-      "version": "0.1.1",
-      "versionDate": "2026-08-20",
-      "versionDescription": "- Build GitHub allineata a Xcode 26.6 e SDK iOS 26.5, come la build locale.\n- Entitlement App Group preservato nell'IPA per la rifirma di SideStore.\n- Rilevamento automatico dell'App Group rimappato da SideStore con il Team ID Apple.\n- Cache dei widget condivisa anche tramite file atomici nel contenitore App Group.\n- Aggiornamento dei widget quando xSpese torna in primo piano.",
-      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.1.1/xSpese-0.1.1.ipa",
-      "size": 2122776
+      "version": "0.2.0",
+      "versionDate": "2026-08-21",
+      "versionDescription": "- Nuova scheda Prestiti con riepilogo, filtri e ricerca.\n- Creazione, modifica, dettaglio ed eliminazione dei prestiti.\n- Registrazione delle rate e creazione facoltativa del movimento associato.\n- Importazione idempotente delle rate passate.\n- Supporto ai campi storici del server e specifica completa delle API JSON.",
+      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.0/xSpese-0.2.0.ipa",
+      "size": 2300819
     }
   ],
   "news": []
