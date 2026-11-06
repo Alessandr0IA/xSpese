@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti di xSpese vengono documentate in questo file.
 
+## 0.2.2 - 2026-11-06
+
+- Prestiti allineati alla stessa fonte dati usata dalla pagina web del Raspberry.
+- Rate pagate ricavate dallo storico reale dei pagamenti invece che da un contatore obsoleto.
+- Visualizzazione coerente di residuo, prossima rata, stato e data finale.
+- Distinzione tra categoria del prestito e direzione ricevuto/concesso.
+- Caricamento anche dei prestiti estinti e annullati senza confonderli con quelli attivi.
+
 ## 0.2.1 - 2026-11-06
 
 - Aggiornamento automatico dei prestiti quando si apre la scheda, si torna nell'app e ogni minuto mentre la sezione è visibile.

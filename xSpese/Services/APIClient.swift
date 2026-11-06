@@ -165,7 +165,15 @@ struct APIClient {
     }
 
     func fetchLoans() async throws -> [LoanDTO] {
-        let data = try await execute(authenticatedRequest(path: "api/prestiti"))
+        var request = authenticatedRequest(path: "api/prestiti")
+        var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            URLQueryItem(name: "stato", value: "tutti"),
+            URLQueryItem(name: "limit", value: "500")
+        ]
+        guard let url = components?.url else { throw APIError.invalidConfiguration }
+        request.url = url
+        let data = try await execute(request)
         if let response = try? JSONDecoder().decode(LoansResponse.self, from: data) {
             guard response.ok else { throw APIError.serverRejected }
             return response.loans
@@ -570,6 +578,7 @@ struct LoanDTO: Decodable, Identifiable {
     let lender: String?
     let borrower: String?
     let type: String?
+    let loanCategory: String?
     let totalAmount: Decimal
     let installmentAmount: Decimal?
     let remainingAmountFromServer: Decimal?
@@ -577,6 +586,7 @@ struct LoanDTO: Decodable, Identifiable {
     let totalInstallments: Int?
     let paidInstallments: Int
     let startDate: String?
+    let endDate: String?
     let nextPaymentDate: String?
     let dueDay: Int?
     let frequency: String?
@@ -598,6 +608,12 @@ struct LoanDTO: Decodable, Identifiable {
             || (totalInstallments.map { paidInstallments >= $0 } ?? false)
     }
 
+    var isCancelled: Bool {
+        ["annullato", "annullata", "cancellato", "cancellata"].contains(status.lowercased())
+    }
+
+    var isActive: Bool { !isCompleted && !isCancelled }
+
     var remainingInstallments: Int? {
         totalInstallments.map { max($0 - paidInstallments, 0) }
     }
@@ -618,6 +634,7 @@ struct LoanDTO: Decodable, Identifiable {
     }
 
     var startDateValue: Date? { startDate.flatMap(Self.parseDate) }
+    var endDateValue: Date? { endDate.flatMap(Self.parseDate) }
     var nextPaymentDateValue: Date? {
         if let nextPaymentDate, let explicit = Self.parseDate(nextPaymentDate) { return explicit }
         guard let startDateValue, !isCompleted else { return nil }
@@ -639,6 +656,7 @@ struct LoanDTO: Decodable, Identifiable {
         case borrower = "debitore"
         case beneficiary = "beneficiario"
         case type = "tipo"
+        case loanCategory = "categoria_prestito"
         case totalAmount = "importo_totale"
         case amount = "importo"
         case principal = "capitale"
@@ -652,6 +670,7 @@ struct LoanDTO: Decodable, Identifiable {
         case paidInstallments = "rate_pagate"
         case installmentsPaid = "numero_rate_pagate"
         case startDate = "data_inizio"
+        case endDate = "data_fine"
         case nextPaymentDate = "data_prossima_rata"
         case nextDueDate = "prossima_scadenza"
         case dueDay = "giorno_scadenza"
@@ -710,6 +729,7 @@ struct LoanDTO: Decodable, Identifiable {
         lender = string([.lender, .institution])
         borrower = string([.borrower, .beneficiary])
         type = string([.type])
+        loanCategory = string([.loanCategory])
         totalAmount = decimal([.totalAmount, .amount, .principal]) ?? 0
         installmentAmount = decimal([.installmentAmount, .monthlyInstallment, .installment])
         remainingAmountFromServer = decimal([.remainingAmount, .residual])
@@ -717,6 +737,7 @@ struct LoanDTO: Decodable, Identifiable {
         totalInstallments = integer([.totalInstallments, .installmentsTotal])
         paidInstallments = integer([.paidInstallments, .installmentsPaid]) ?? 0
         startDate = string([.startDate])
+        endDate = string([.endDate])
         nextPaymentDate = string([.nextPaymentDate, .nextDueDate])
         dueDay = integer([.dueDay, .paymentDay])
         frequency = string([.frequency])
@@ -739,10 +760,11 @@ struct LoanMutation: Encodable {
     let lender: String?
     let borrower: String?
     let type: String
+    let loanCategory: String
     let totalAmount: Decimal
     let installmentAmount: Decimal
     let currency: String
-    let totalInstallments: Int
+    let totalInstallments: Int?
     let paidInstallments: Int
     let startDate: String
     let dueDay: Int
@@ -760,6 +782,7 @@ struct LoanMutation: Encodable {
         case lender = "creditore"
         case borrower = "debitore"
         case type = "tipo"
+        case loanCategory = "categoria_prestito"
         case totalAmount = "importo_totale"
         case installmentAmount = "importo_rata"
         case currency = "valuta"

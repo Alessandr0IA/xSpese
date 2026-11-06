@@ -11,6 +11,7 @@ Contratto usato dalla sezione nativa **Prestiti** di xSpese. Tutte le route rich
   "creditore": "Banca",
   "debitore": null,
   "tipo": "ricevuto",
+  "categoria_prestito": "finanziamento",
   "importo_totale": "18000.00",
   "importo_rata": "300.00",
   "importo_residuo": "12600.00",
@@ -18,6 +19,7 @@ Contratto usato dalla sezione nativa **Prestiti** di xSpese. Tutte le route rich
   "numero_rate": 60,
   "rate_pagate": 18,
   "data_inizio": "2025-03-10",
+  "data_fine": "2030-02-10",
   "data_prossima_rata": "2026-09-10",
   "giorno_scadenza": 10,
   "frequenza": "mensile",
@@ -35,11 +37,15 @@ Contratto usato dalla sezione nativa **Prestiti** di xSpese. Tutte le route rich
 }
 ```
 
-Gli importi possono essere numeri JSON oppure stringhe decimali. `importo_residuo` e `data_prossima_rata` possono essere calcolati dal server.
+Gli importi possono essere numeri JSON oppure stringhe decimali. `tipo` indica la direzione (`ricevuto` o `concesso`), mentre `categoria_prestito` vale `mutuo`, `prestito`, `finanziamento` oppure `altro`.
+
+`importo_residuo`, `data_prossima_rata` e `rate_pagate` devono provenire dalla stessa fonte usata dalla pagina web. Nel server attuale le colonne storiche `debito_residuo`, `prossima_rata`, `rata`, `importo_iniziale`, `nome` e `istituto` sono la fonte principale; `rate_pagate` deve essere il conteggio effettivo di `loan_payments`.
 
 ## Route
 
 ### `GET /api/prestiti`
+
+L'app usa `?stato=tutti&limit=500` e applica localmente i filtri Attivi/Estinti/Tutti.
 
 ```json
 { "ok": true, "prestiti": [] }

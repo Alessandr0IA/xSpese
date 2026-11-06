@@ -173,7 +173,7 @@ struct LoansView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    private var activeLoans: [LoanDTO] { loans.filter { !$0.isCompleted } }
+    private var activeLoans: [LoanDTO] { loans.filter(\.isActive) }
     private var totalOutstanding: Decimal { activeLoans.reduce(0) { $0 + $1.remainingAmount } }
     private var installmentCommitment: Decimal { activeLoans.compactMap(\.installmentAmount).reduce(0, +) }
 
@@ -181,7 +181,7 @@ struct LoansView: View {
         loans
             .filter { loan in
                 switch selectedStatus {
-                case .active: !loan.isCompleted
+                case .active: loan.isActive
                 case .completed: loan.isCompleted
                 case .all: true
                 }
@@ -243,7 +243,7 @@ private struct LoanRow: View {
             }
 
             ProgressView(value: loan.progress)
-                .tint(loan.isCompleted ? .green : .blue)
+                .tint(loan.isCompleted ? .green : loan.isCancelled ? .gray : .blue)
 
             HStack {
                 if let total = loan.totalInstallments {
@@ -252,6 +252,8 @@ private struct LoanRow: View {
                 Spacer()
                 if loan.isCompleted {
                     Label("Estinto", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                } else if loan.isCancelled {
+                    Label("Annullato", systemImage: "xmark.circle.fill").foregroundStyle(.secondary)
                 } else if let nextDate = loan.nextPaymentDateValue {
                     Label(nextDate.formatted(.dateTime.day().month(.abbreviated)), systemImage: "calendar")
                         .foregroundStyle(nextDate < Calendar.current.startOfDay(for: .now) ? .red : .secondary)
@@ -292,7 +294,12 @@ private struct LoanDetailView: View {
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(loan.isCompleted ? Color.green.opacity(0.14) : Color.blue.opacity(0.14), in: Capsule())
+                            .background(
+                                loan.isCompleted
+                                    ? Color.green.opacity(0.14)
+                                    : loan.isCancelled ? Color.gray.opacity(0.14) : Color.blue.opacity(0.14),
+                                in: Capsule()
+                            )
                     }
                     Text("Residuo su \(loan.totalAmount.formatted(.currency(code: loan.currency)))")
                         .foregroundStyle(.secondary)
@@ -312,6 +319,9 @@ private struct LoanDetailView: View {
                 if let nextDate = loan.nextPaymentDateValue {
                     LabeledContent("Prossima rata") { Text(nextDate, format: .dateTime.day().month().year()) }
                 }
+                if let endDate = loan.endDateValue {
+                    LabeledContent("Data fine") { Text(endDate, format: .dateTime.day().month().year()) }
+                }
                 if let dueDay = loan.dueDay { LabeledContent("Giorno pagamento", value: "\(dueDay)") }
                 if let frequency = loan.frequency { LabeledContent("Frequenza", value: frequency.capitalized) }
                 if let interestRate = loan.interestRate {
@@ -320,7 +330,8 @@ private struct LoanDetailView: View {
             }
 
             Section("Informazioni") {
-                if let type = loan.type { LabeledContent("Tipo", value: type.capitalized) }
+                if let loanCategory = loan.loanCategory { LabeledContent("Categoria prestito", value: loanCategory.capitalized) }
+                if let type = loan.type { LabeledContent("Direzione", value: type.capitalized) }
                 if let lender = loan.lender { LabeledContent("Creditore", value: lender) }
                 if let borrower = loan.borrower { LabeledContent("Debitore", value: borrower) }
                 if let user = loan.user { LabeledContent("Utente", value: user) }
@@ -333,7 +344,7 @@ private struct LoanDetailView: View {
                 if let notes = loan.notes, !notes.isEmpty { Text(notes).foregroundStyle(.secondary) }
             }
 
-            if !loan.isCompleted {
+            if loan.isActive {
                 Section("Azioni") {
                     Button { showsPayment = true } label: {
                         Label("Registra rata pagata", systemImage: "checkmark.circle.fill")
@@ -439,10 +450,11 @@ private struct LoanEditorView: View {
     @State private var lender: String
     @State private var borrower: String
     @State private var type: String
+    @State private var loanCategory: String
     @State private var totalAmount: String
     @State private var installmentAmount: String
     @State private var currency: String
-    @State private var totalInstallments: Int
+    @State private var totalInstallments: String
     @State private var paidInstallments: Int
     @State private var startDate: Date
     @State private var dueDay: Int
@@ -464,10 +476,11 @@ private struct LoanEditorView: View {
         _lender = State(initialValue: loan?.lender ?? "")
         _borrower = State(initialValue: loan?.borrower ?? "")
         _type = State(initialValue: loan?.type ?? "ricevuto")
+        _loanCategory = State(initialValue: loan?.loanCategory ?? "prestito")
         _totalAmount = State(initialValue: loan.map { NSDecimalNumber(decimal: $0.totalAmount).stringValue } ?? "")
         _installmentAmount = State(initialValue: loan?.installmentAmount.map { NSDecimalNumber(decimal: $0).stringValue } ?? "")
         _currency = State(initialValue: loan?.currency ?? UserDefaults.standard.defaultCurrency)
-        _totalInstallments = State(initialValue: max(loan?.totalInstallments ?? 12, 1))
+        _totalInstallments = State(initialValue: loan == nil ? "12" : loan?.totalInstallments.map(String.init) ?? "")
         _paidInstallments = State(initialValue: loan?.paidInstallments ?? 0)
         _startDate = State(initialValue: loan?.startDateValue ?? .now)
         _dueDay = State(initialValue: loan?.dueDay ?? Calendar.current.component(.day, from: .now))
@@ -486,17 +499,22 @@ private struct LoanEditorView: View {
             Form {
                 Section("Prestito") {
                     TextField("Titolo", text: $title)
-                    Picker("Tipo", selection: $type) {
+                    Picker("Categoria", selection: $loanCategory) {
+                        Text("Mutuo").tag("mutuo")
+                        Text("Prestito").tag("prestito")
+                        Text("Finanziamento").tag("finanziamento")
+                        Text("Altro").tag("altro")
+                    }
+                    Picker("Direzione", selection: $type) {
                         Text("Prestito ricevuto").tag("ricevuto")
                         Text("Credito concesso").tag("concesso")
-                        Text("Finanziamento").tag("finanziamento")
                     }
                     TextField("Creditore o istituto", text: $lender)
                     TextField("Debitore o beneficiario", text: $borrower)
                     Picker("Stato", selection: $status) {
                         Text("Attivo").tag("attivo")
-                        Text("Sospeso").tag("sospeso")
                         Text("Estinto").tag("estinto")
+                        Text("Annullato").tag("annullato")
                     }
                 }
 
@@ -508,15 +526,19 @@ private struct LoanEditorView: View {
                 }
 
                 Section("Piano rate") {
-                    Stepper("Numero rate: \(totalInstallments)", value: $totalInstallments, in: 1...600)
-                    Stepper("Rate già pagate: \(paidInstallments)", value: $paidInstallments, in: 0...max(totalInstallments, 0))
+                    TextField("Numero rate (opzionale)", text: $totalInstallments).keyboardType(.numberPad)
+                    Stepper(
+                        "Rate registrate: \(paidInstallments)",
+                        value: $paidInstallments,
+                        in: 0...max(Int(totalInstallments) ?? 600, paidInstallments)
+                    )
                     DatePicker("Data iniziale", selection: $startDate, displayedComponents: .date)
                     Stepper("Giorno pagamento: \(dueDay)", value: $dueDay, in: 1...31)
                     Picker("Frequenza", selection: $frequency) {
                         Text("Mensile").tag("mensile")
                         Text("Settimanale").tag("settimanale")
-                        Text("Trimestrale").tag("trimestrale")
                         Text("Annuale").tag("annuale")
+                        Text("Altro").tag("altro")
                     }
                 }
 
@@ -558,7 +580,20 @@ private struct LoanEditorView: View {
             errorMessage = "Inserisci un importo totale valido."
             return
         }
-        let computedInstallment = parsedDecimal(installmentAmount) ?? total / Decimal(totalInstallments)
+        let installmentCount = Int(totalInstallments.trimmingCharacters(in: .whitespacesAndNewlines))
+        if loan == nil, installmentCount == nil || installmentCount == 0 {
+            errorMessage = "Inserisci un numero di rate maggiore di zero."
+            return
+        }
+        if let installmentCount, installmentCount <= 0 {
+            errorMessage = "Il numero di rate deve essere maggiore di zero."
+            return
+        }
+        let computedInstallment = parsedDecimal(installmentAmount) ?? installmentCount.map { total / Decimal($0) }
+        guard let computedInstallment else {
+            errorMessage = "Inserisci l'importo della rata."
+            return
+        }
         guard computedInstallment > 0 else {
             errorMessage = "Inserisci un importo rata valido."
             return
@@ -569,11 +604,12 @@ private struct LoanEditorView: View {
             lender: normalizedOrNil(lender),
             borrower: normalizedOrNil(borrower),
             type: type,
+            loanCategory: loanCategory,
             totalAmount: total,
             installmentAmount: computedInstallment,
             currency: currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
-            totalInstallments: totalInstallments,
-            paidInstallments: min(paidInstallments, totalInstallments),
+            totalInstallments: installmentCount,
+            paidInstallments: min(paidInstallments, installmentCount ?? paidInstallments),
             startDate: DeadlineDTO.dateOnlyFormatter.string(from: startDate),
             dueDay: dueDay,
             frequency: frequency,
