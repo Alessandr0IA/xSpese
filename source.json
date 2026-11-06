@@ -21,6 +21,16 @@
       "category": "utilities",
       "versions": [
         {
+          "version": "0.2.2",
+          "buildVersion": "5",
+          "date": "2026-11-06",
+          "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.2/xSpese-0.2.2.ipa",
+          "size": 2328606,
+          "sha256": "7ca35aa0044955977faa8a1ec765c42af95a8ed0da6aaed20c0990be93e59f2e",
+          "minOSVersion": "17.0",
+          "localizedDescription": "- Prestiti allineati alla stessa fonte dati usata dalla pagina web del Raspberry.\n- Rate pagate ricavate dallo storico reale dei pagamenti invece che da un contatore obsoleto.\n- Visualizzazione coerente di residuo, prossima rata, stato e data finale.\n- Distinzione tra categoria del prestito e direzione ricevuto/concesso.\n- Caricamento anche dei prestiti estinti e annullati senza confonderli con quelli attivi."
+        },
+        {
           "version": "0.2.1",
           "buildVersion": "4",
           "date": "2026-11-06",
@@ -67,11 +77,11 @@
         ],
         "privacy": {}
       },
-      "version": "0.2.1",
+      "version": "0.2.2",
       "versionDate": "2026-11-06",
-      "versionDescription": "- Aggiornamento automatico dei prestiti quando si apre la scheda, si torna nell'app e ogni minuto mentre la sezione è visibile.\n- Richieste prestiti senza cache HTTP per leggere sempre i dati correnti dal Raspberry.\n- Indicazione dell'ora dell'ultimo aggiornamento e messaggio visibile se il refresh fallisce.\n- Barra di ricerca e filtri ridisegnati per evitare salti del contenuto durante lo scorrimento.\n- Verifica di creazione dell'IPA resa compatibile con le versioni recenti di Xcode.",
-      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.1/xSpese-0.2.1.ipa",
-      "size": 2321218
+      "versionDescription": "- Prestiti allineati alla stessa fonte dati usata dalla pagina web del Raspberry.\n- Rate pagate ricavate dallo storico reale dei pagamenti invece che da un contatore obsoleto.\n- Visualizzazione coerente di residuo, prossima rata, stato e data finale.\n- Distinzione tra categoria del prestito e direzione ricevuto/concesso.\n- Caricamento anche dei prestiti estinti e annullati senza confonderli con quelli attivi.",
+      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.2/xSpese-0.2.2.ipa",
+      "size": 2328606
     }
   ],
   "news": []
