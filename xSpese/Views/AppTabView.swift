@@ -32,7 +32,7 @@ struct AppTabView: View {
                 }
                 .tag(3)
 
-            LoansView()
+            LoansView(isSelected: selectedTab == 4)
                 .tabItem {
                     Label("Prestiti", systemImage: "banknote.fill")
                 }

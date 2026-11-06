@@ -233,10 +233,15 @@ struct APIClient {
     }
 
     private func authenticatedRequest(path: String, method: String = "GET") -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        var request = URLRequest(
+            url: baseURL.appendingPathComponent(path),
+            cachePolicy: .reloadIgnoringLocalCacheData,
+            timeoutInterval: 15
+        )
         request.httpMethod = method
-        request.timeoutInterval = 15
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
         if method != "GET" {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }

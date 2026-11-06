@@ -118,7 +118,7 @@ IPA_PATH="${DIST_DIR}/${IPA_NAME}"
 
 [[ -s "${IPA_PATH}" ]] || fail "IPA non creato"
 /usr/bin/unzip -tq "${IPA_PATH}" >/dev/null || fail "l'IPA non è uno ZIP valido"
-/usr/bin/unzip -l "${IPA_PATH}" | grep -q "Payload/${APP_NAME}.app/Info.plist" || \
+/usr/bin/unzip -Z1 "${IPA_PATH}" | grep -Fx "Payload/${APP_NAME}.app/Info.plist" >/dev/null || \
     fail "l'IPA non contiene Payload/${APP_NAME}.app/Info.plist"
 
 python3 - "${IPA_PATH}" "${DIST_DIR}/build-info.json" "${APP_NAME}" "${VERSION}" "${BUILD_NUMBER}" "${BUNDLE_IDENTIFIER}" <<'PY'

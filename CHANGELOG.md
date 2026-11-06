@@ -2,6 +2,14 @@
 
 Tutte le modifiche rilevanti di xSpese vengono documentate in questo file.
 
+## 0.2.1 - 2026-11-06
+
+- Aggiornamento automatico dei prestiti quando si apre la scheda, si torna nell'app e ogni minuto mentre la sezione è visibile.
+- Richieste prestiti senza cache HTTP per leggere sempre i dati correnti dal Raspberry.
+- Indicazione dell'ora dell'ultimo aggiornamento e messaggio visibile se il refresh fallisce.
+- Barra di ricerca e filtri ridisegnati per evitare salti del contenuto durante lo scorrimento.
+- Verifica di creazione dell'IPA resa compatibile con le versioni recenti di Xcode.
+
 ## 0.2.0 - 2026-08-21
 
 - Nuova scheda Prestiti con riepilogo, filtri e ricerca.

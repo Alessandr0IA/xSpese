@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct LoansView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    let isSelected: Bool
+
     @State private var loans: [LoanDTO] = []
     @State private var selectedStatus = LoanListStatus.active
     @State private var searchText = ""
@@ -8,75 +11,132 @@ struct LoansView: View {
     @State private var errorMessage: String?
     @State private var showsNewLoan = false
     @State private var showsSettings = false
+    @State private var lastUpdatedAt: Date?
+
+    init(isSelected: Bool = true) {
+        self.isSelected = isSelected
+    }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading && loans.isEmpty {
-                    ProgressView("Caricamento prestiti…")
-                } else if let errorMessage, loans.isEmpty {
-                    ContentUnavailableView {
-                        Label("Prestiti non disponibili", systemImage: "banknote.fill")
-                    } description: {
-                        Text(errorMessage)
-                    } actions: {
-                        Button("Riprova") { Task { await load() } }
-                        Button("Impostazioni") { showsSettings = true }
-                    }
-                } else if filteredLoans.isEmpty {
-                    ContentUnavailableView {
-                        Label("Nessun prestito", systemImage: "checkmark.circle")
-                    } description: {
-                        Text(searchText.isEmpty ? "Non ci sono prestiti in questa sezione." : "Nessun risultato per la ricerca.")
-                    } actions: {
-                        if selectedStatus == .active && searchText.isEmpty {
-                            Button("Nuovo prestito") { showsNewLoan = true }
-                                .buttonStyle(.borderedProminent)
+            VStack(spacing: 0) {
+                filterBar
+                Divider()
+
+                Group {
+                    if isLoading && loans.isEmpty {
+                        ProgressView("Caricamento prestiti…")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let errorMessage, loans.isEmpty {
+                        ContentUnavailableView {
+                            Label("Prestiti non disponibili", systemImage: "banknote.fill")
+                        } description: {
+                            Text(errorMessage)
+                        } actions: {
+                            Button("Riprova") { Task { await load() } }
+                            Button("Impostazioni") { showsSettings = true }
                         }
+                    } else if filteredLoans.isEmpty {
+                        ContentUnavailableView {
+                            Label("Nessun prestito", systemImage: searchText.isEmpty ? "checkmark.circle" : "magnifyingglass")
+                        } description: {
+                            Text(searchText.isEmpty ? "Non ci sono prestiti in questa sezione." : "Nessun risultato per la ricerca.")
+                        } actions: {
+                            if selectedStatus == .active && searchText.isEmpty {
+                                Button("Nuovo prestito") { showsNewLoan = true }
+                                    .buttonStyle(.borderedProminent)
+                            }
+                        }
+                    } else {
+                        loanList
                     }
-                } else {
-                    loanList
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle("Prestiti")
-            .searchable(text: $searchText, prompt: "Titolo, creditore o utente")
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Picker("Stato", selection: $selectedStatus) {
-                    ForEach(LoanListStatus.allCases) { status in
-                        Text(status.title).tag(status)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(.bar)
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Titolo, creditore o utente"
+            )
             .toolbar {
-                ToolbarItemGroup(placement: .topBarLeading) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Button { showsNewLoan = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Nuovo prestito")
-                    Button { Task { await load() } } label: {
-                        if isLoading { ProgressView() } else { Image(systemName: "arrow.clockwise") }
+
+                    Menu {
+                        Button { Task { await load() } } label: {
+                            Label("Aggiorna", systemImage: "arrow.clockwise")
+                        }
+                        .disabled(isLoading)
+
+                        Button { showsSettings = true } label: {
+                            Label("Impostazioni server", systemImage: "gearshape")
+                        }
+                    } label: {
+                        if isLoading {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "ellipsis.circle")
+                        }
                     }
-                    .disabled(isLoading)
-                    .accessibilityLabel("Aggiorna prestiti")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showsSettings = true } label: { Image(systemName: "gearshape.fill") }
-                        .accessibilityLabel("Impostazioni")
+                    .accessibilityLabel("Altre azioni")
                 }
             }
             .refreshable { await load() }
-            .task { await load() }
+            .task(id: isSelected) {
+                guard isSelected else { return }
+                await load()
+                while !Task.isCancelled {
+                    do {
+                        try await Task.sleep(for: .seconds(60))
+                    } catch {
+                        return
+                    }
+                    guard scenePhase == .active else { continue }
+                    await load()
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, isSelected else { return }
+                Task { await load() }
+            }
             .sheet(isPresented: $showsNewLoan) {
                 LoanEditorView(loan: nil) { _ in await load() }
             }
-            .sheet(isPresented: $showsSettings) { SettingsView() }
+            .sheet(isPresented: $showsSettings, onDismiss: {
+                Task { await load() }
+            }) {
+                SettingsView()
+            }
         }
+    }
+
+    private var filterBar: some View {
+        Picker("Stato prestiti", selection: $selectedStatus) {
+            ForEach(LoanListStatus.allCases) { status in
+                Text(status.title).tag(status)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
     }
 
     private var loanList: some View {
         List {
+            if let errorMessage {
+                Section {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Button("Riprova") { Task { await load() } }
+                } footer: {
+                    Text("I dati mostrati potrebbero non essere aggiornati.")
+                }
+            }
+
             Section {
                 HStack(spacing: 14) {
                     summaryItem(value: "\(activeLoans.count)", label: "Attivi", color: .blue)
@@ -87,6 +147,16 @@ struct LoansView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
+
+                if let lastUpdatedAt {
+                    HStack {
+                        Spacer()
+                        Text("Aggiornato \(lastUpdatedAt, format: .dateTime.hour().minute().second())")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                }
             }
 
             Section(selectedStatus.title) {
@@ -99,6 +169,8 @@ struct LoansView: View {
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var activeLoans: [LoanDTO] { loans.filter { !$0.isCompleted } }
@@ -146,6 +218,7 @@ struct LoansView: View {
         do {
             loans = try await SyncService.shared.configuredClient().fetchLoans()
             errorMessage = nil
+            lastUpdatedAt = .now
         } catch {
             errorMessage = error.localizedDescription
         }
