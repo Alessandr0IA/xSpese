@@ -21,6 +21,16 @@
       "category": "utilities",
       "versions": [
         {
+          "version": "0.2.1",
+          "buildVersion": "4",
+          "date": "2026-11-06",
+          "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.1/xSpese-0.2.1.ipa",
+          "size": 2321218,
+          "sha256": "44910b10f3a6a02bc5a3b4739fd6ac342d0aa990d3c1bfd267dbb73f1342792a",
+          "minOSVersion": "17.0",
+          "localizedDescription": "- Aggiornamento automatico dei prestiti quando si apre la scheda, si torna nell'app e ogni minuto mentre la sezione è visibile.\n- Richieste prestiti senza cache HTTP per leggere sempre i dati correnti dal Raspberry.\n- Indicazione dell'ora dell'ultimo aggiornamento e messaggio visibile se il refresh fallisce.\n- Barra di ricerca e filtri ridisegnati per evitare salti del contenuto durante lo scorrimento.\n- Verifica di creazione dell'IPA resa compatibile con le versioni recenti di Xcode."
+        },
+        {
           "version": "0.2.0",
           "buildVersion": "3",
           "date": "2026-08-21",
@@ -57,11 +67,11 @@
         ],
         "privacy": {}
       },
-      "version": "0.2.0",
-      "versionDate": "2026-08-21",
-      "versionDescription": "- Nuova scheda Prestiti con riepilogo, filtri e ricerca.\n- Creazione, modifica, dettaglio ed eliminazione dei prestiti.\n- Registrazione delle rate e creazione facoltativa del movimento associato.\n- Importazione idempotente delle rate passate.\n- Supporto ai campi storici del server e specifica completa delle API JSON.",
-      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.0/xSpese-0.2.0.ipa",
-      "size": 2300819
+      "version": "0.2.1",
+      "versionDate": "2026-11-06",
+      "versionDescription": "- Aggiornamento automatico dei prestiti quando si apre la scheda, si torna nell'app e ogni minuto mentre la sezione è visibile.\n- Richieste prestiti senza cache HTTP per leggere sempre i dati correnti dal Raspberry.\n- Indicazione dell'ora dell'ultimo aggiornamento e messaggio visibile se il refresh fallisce.\n- Barra di ricerca e filtri ridisegnati per evitare salti del contenuto durante lo scorrimento.\n- Verifica di creazione dell'IPA resa compatibile con le versioni recenti di Xcode.",
+      "downloadURL": "https://github.com/Alessandr0IA/xSpese/releases/download/v0.2.1/xSpese-0.2.1.ipa",
+      "size": 2321218
     }
   ],
   "news": []
